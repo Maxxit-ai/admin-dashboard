@@ -118,9 +118,8 @@ function StatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`text-xs px-2 py-0.5 border ${
-        colors[status || "DRAFT"] || colors.DRAFT
-      }`}
+      className={`text-xs px-2 py-0.5 border ${colors[status || "DRAFT"] || colors.DRAFT
+        }`}
     >
       {status || "DRAFT"}
     </span>
@@ -141,24 +140,23 @@ function StatCard({
   icon?: string;
 }) {
   return (
-    <div className="border border-(--border) bg-(--bg-surface) p-6 hover:border-accent/50 transition-colors">
+    <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6 hover:border-accent/50 transition-colors">
       <div className="flex items-start justify-between mb-4">
         <p className="data-label">{label}</p>
         {icon && <span className="text-2xl opacity-50">{icon}</span>}
       </div>
       <p
-        className={`font-display text-4xl ${
-          trend === "up"
-            ? "text-accent"
-            : trend === "down"
-            ? "text-(--danger)"
-            : "text-(--text-primary)"
-        }`}
+        className={`font-display text-4xl ${trend === "up"
+          ? "text-accent"
+          : trend === "down"
+            ? "text-[var(--danger)]"
+            : "text-[var(--text-primary)]"
+          }`}
       >
         {value}
       </p>
       {subValue && (
-        <p className="text-sm text-(--text-muted) mt-2">{subValue}</p>
+        <p className="text-sm text-[var(--text-muted)] mt-2">{subValue}</p>
       )}
     </div>
   );
@@ -299,12 +297,12 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-(--bg-deep) text-(--text-primary)">
+    <div className="bg-[var(--bg-deep)] text-[var(--text-primary)]">
       {/* Header */}
       <Header />
 
       <main className="pt-20 px-6 pb-12">
-        <div className="max-w-[1800px] mx-auto">
+        <div className="w-full">
           {/* Page Title */}
           <div className="flex items-end justify-between mb-8 pt-6">
             <div>
@@ -334,7 +332,7 @@ export default function AdminDashboard() {
               ))}
             </div>
           ) : error ? (
-            <div className="border border-[var(--danger)] p-8 text-center">
+            <div className="border border-[var(--danger)] bg-[var(--bg-surface)] p-8 text-center">
               <p className="text-[var(--danger)] font-mono">ERROR: {error}</p>
               <button
                 onClick={() => window.location.reload()}
@@ -421,11 +419,10 @@ export default function AdminDashboard() {
                     <button
                       key={tab}
                       onClick={() => setSelectedTab(tab)}
-                      className={`px-4 py-3 text-sm font-bold uppercase transition-colors border-b-2 -mb-px ${
-                        selectedTab === tab
-                          ? "border-accent text-accent"
-                          : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                      }`}
+                      className={`px-4 py-3 text-sm font-bold uppercase transition-colors border-b-2 -mb-px ${selectedTab === tab
+                        ? "border-accent text-accent"
+                        : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                        }`}
                     >
                       {tab}
                     </button>
@@ -473,11 +470,10 @@ export default function AdminDashboard() {
                         <button
                           key={sort}
                           onClick={() => setSortBy(sort)}
-                          className={`px-3 py-1 text-xs uppercase ${
-                            sortBy === sort
-                              ? "bg-accent text-[var(--bg-deep)]"
-                              : "border border-[var(--border)] hover:border-accent"
-                          }`}
+                          className={`px-3 py-1 text-xs uppercase ${sortBy === sort
+                            ? "bg-accent text-[var(--bg-deep)]"
+                            : "border border-[var(--border)] hover:border-accent"
+                            }`}
                         >
                           {sort}
                         </button>
@@ -574,25 +570,22 @@ export default function AdminDashboard() {
                                 {agent.totalSignals}
                               </td>
                               <td
-                                className={`px-4 py-4 text-right font-mono ${
-                                  agent.totalPnl >= 0
-                                    ? "text-accent"
-                                    : "text-[var(--danger)]"
-                                }`}
+                                className={`px-4 py-4 text-right font-mono ${agent.totalPnl >= 0
+                                  ? "text-accent"
+                                  : "text-[var(--danger)]"
+                                  }`}
                               >
                                 {formatPnl(agent.totalPnl)}
                               </td>
                               <td
-                                className={`px-4 py-4 text-right font-mono ${
-                                  agent.apr30d && agent.apr30d > 0
-                                    ? "text-accent"
-                                    : ""
-                                }`}
+                                className={`px-4 py-4 text-right font-mono ${agent.apr30d && agent.apr30d > 0
+                                  ? "text-accent"
+                                  : ""
+                                  }`}
                               >
                                 {agent.apr30d != null
-                                  ? `${
-                                      agent.apr30d > 0 ? "+" : ""
-                                    }${agent.apr30d.toFixed(1)}%`
+                                  ? `${agent.apr30d > 0 ? "+" : ""
+                                  }${agent.apr30d.toFixed(1)}%`
                                   : "—"}
                               </td>
                               <td className="px-4 py-4 text-right font-mono">
@@ -698,13 +691,12 @@ export default function AdminDashboard() {
                                 >
                                   <td className="px-4 py-4">
                                     <span
-                                      className={`text-xs px-2 py-1 border ${
-                                        wallet.type === "profit_receiver"
-                                          ? "border-accent text-accent"
-                                          : wallet.type === "safe_wallet"
+                                      className={`text-xs px-2 py-1 border ${wallet.type === "profit_receiver"
+                                        ? "border-accent text-accent"
+                                        : wallet.type === "safe_wallet"
                                           ? "border-blue-500 text-blue-400"
                                           : "border-purple-500 text-purple-400"
-                                      }`}
+                                        }`}
                                     >
                                       {wallet.type
                                         .replace("_", " ")
@@ -746,11 +738,10 @@ export default function AdminDashboard() {
                                   </td>
                                   <td className="px-4 py-4 text-right">
                                     <span
-                                      className={`font-mono ${
-                                        parseFloat(wallet.ethBalance) > 0.01
-                                          ? "text-accent"
-                                          : ""
-                                      }`}
+                                      className={`font-mono ${parseFloat(wallet.ethBalance) > 0.01
+                                        ? "text-accent"
+                                        : ""
+                                        }`}
                                     >
                                       {parseFloat(wallet.ethBalance).toFixed(4)}{" "}
                                       ETH
@@ -860,7 +851,7 @@ export default function AdminDashboard() {
               <div className="mt-8 border-t border-[var(--border)] pt-8">
                 <p className="data-label mb-4">QUICK ACTIONS</p>
                 <div className="flex flex-wrap gap-4">
-                  <Link href="/admin/database">
+                  {/* <Link href="/admin/database">
                     <button className="px-6 py-3 border border-[var(--border)] hover:border-accent hover:text-accent transition-colors">
                       📊 View Database
                     </button>
@@ -874,7 +865,7 @@ export default function AdminDashboard() {
                     <button className="px-6 py-3 border border-[var(--border)] hover:border-accent hover:text-accent transition-colors">
                       ➕ Create Agent
                     </button>
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={handleRefresh}
                     disabled={loading}
