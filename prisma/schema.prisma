@@ -72,6 +72,7 @@ model agent_deployments {
   user_wallet                     String
   safe_wallet                     String
   status                          deployment_status_t @default(ACTIVE)
+  is_testnet                      Boolean             @default(false)
   sub_active                      Boolean             @default(true)
   sub_started_at                  DateTime            @default(now()) @db.Timestamptz(6)
   trial_ends_at                   DateTime?           @db.Timestamptz(6)
@@ -88,6 +89,7 @@ model agent_deployments {
   billing_events                  billing_events[]
   pnl_snapshots                   pnl_snapshots[]
   positions                       positions[]
+  signals                         signals[]
   telegram_trades                 telegram_trades[]
   telegram_users                  telegram_users[]
 
@@ -107,6 +109,20 @@ model agent_research_institutes {
   @@unique([agent_id, institute_id])
   @@index([agent_id])
   @@index([institute_id])
+}
+
+model agent_top_traders {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id       String      @db.Uuid
+  top_trader_id  String      @db.Uuid
+  is_active      Boolean     @default(true)
+  created_at     DateTime    @default(now()) @db.Timestamptz(6)
+  agents         agents      @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  top_traders    top_traders @relation(fields: [top_trader_id], references: [id], onDelete: Cascade)
+
+  @@unique([agent_id, top_trader_id])
+  @@index([agent_id])
+  @@index([top_trader_id])
 }
 
 model agent_routing_history {
@@ -131,17 +147,21 @@ model agents {
   id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   creator_wallet            String
   name                      String
+  description               String?
   venue                     venue_t
   weights                   Int[]                       @db.SmallInt
-  apr_30d                   Float?                      @db.Real
-  apr_90d                   Float?                      @db.Real
-  apr_si                    Float?                      @db.Real
-  sharpe_30d                Float?                      @db.Real
+  apr_30d                   Float?                      @default(0) @db.Real
+  apr_90d                   Float?                      @default(0) @db.Real
+  apr_si                    Float?                      @default(0) @db.Real
+  sharpe_30d                Float?                      @default(0) @db.Real
   profit_receiver_address   String
   proof_of_intent_message   String?
   proof_of_intent_signature String?
   proof_of_intent_timestamp DateTime?                   @db.Timestamptz(6)
   status                    agent_status_t?             @default(PUBLIC)
+  agent_top_traders         agent_top_traders[]
+  is_copy_trade_club        Boolean                     @default(false)
+  token_filters             String[]                    @default([])
   agent_accounts            agent_accounts[]
   agent_deployments         agent_deployments[]
   agent_research_institutes agent_research_institutes[]
@@ -280,6 +300,7 @@ model positions {
   status                String                  @default("OPEN")
   ostium_trade_index    Int?                   // Actual trade index from Ostium (fixes SDK bug)
   ostium_trade_id       String?                // Order ID / Trade ID from Ostium SDK for precise matching
+  source_trader_trade_id String?               // References trader_trades.source_trade_id for copy-trade positions
   billing_events        billing_events[]
   impact_factor_history impact_factor_history[]
   agent_deployments     agent_deployments       @relation(fields: [deployment_id], references: [id], onDelete: Cascade)
@@ -291,6 +312,7 @@ model positions {
   @@index([signal_id])
   @@index([source])
   @@index([status])
+  @@index([source_trader_trade_id])
 }
 
 model research_institutes {
@@ -328,9 +350,11 @@ model research_signals {
 }
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+/// Expression index: signals_agent_token_deployment_bucket_6h_idx on (agent_id, token_symbol, deployment_id, bucket_6h_utc(created_at))
 model signals {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   agent_id                     String                  @db.Uuid
+  deployment_id                String?                 @db.Uuid
   token_symbol                 String
   venue                        venue_t
   side                         String
@@ -354,14 +378,20 @@ model signals {
   llm_should_trade             Boolean?
   llm_fund_allocation          Float?
   llm_leverage                Float?
+  llm_close_trade_id          String?               
+  llm_net_position_change     String?               
+  trade_executed               String?
+  execution_result             String?
   routing_history              Json?
   agent_routing_history        agent_routing_history[]
   impact_factor_history        impact_factor_history[]
   positions                    positions[]
   agents                       agents                  @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  agent_deployments            agent_deployments?      @relation(fields: [deployment_id], references: [id], onDelete: Cascade)
   venue_routing_history        venue_routing_history[]
 
   @@index([agent_id, created_at])
+  @@index([deployment_id])
   @@index([lunarcrush_score])
 }
 
@@ -373,13 +403,20 @@ model telegram_alpha_users {
   last_name             String?
   impact_factor         Float                   @default(0.5) @db.Real
   is_active             Boolean                 @default(true)
+  lazy_trader           Boolean                 @default(false)
+  public_source         Boolean                 @default(false)
+  user_wallet           String?                 // Wallet address for lazy traders (links telegram to wallet)
   last_message_at       DateTime?               @db.Timestamptz(6)
   created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  credit_price          Decimal                 @default(0) @db.Decimal(20, 8)
   agent_telegram_users  agent_telegram_users[]
   telegram_posts        telegram_posts[]
 
   @@index([is_active])
   @@index([telegram_user_id])
+  @@index([lazy_trader])
+  @@index([public_source])
+  @@index([user_wallet])
 }
 
 model telegram_sources {
@@ -413,6 +450,12 @@ model telegram_posts {
   extracted_tokens        String[]              @default([])
   confidence_score        Float?
   signal_type             String?
+  token_price             Float?               // Spot price from LunarCrush at classification time
+  timeline_window         String?              // Parsed time window / deadline for the signal (e.g. "2025-01-31" or textual)
+  take_profit             Float?   @default(0) // Take profit target extracted from signal
+  stop_loss               Float?   @default(0) // Stop loss target extracted from signal
+  impact_factor_flag      Boolean              @default(false) // Whether this signal has been used for impact-factor updates
+  pnl                     Float                @default(0) @db.Real // Profit & Loss percentage (calculated from token_price vs current price)
   processed_for_signals   Boolean               @default(false)
   created_at              DateTime              @default(now()) @db.Timestamptz(6)
   
@@ -422,7 +465,12 @@ model telegram_posts {
   llm_model_used          String?               // Model ID used (e.g., "gpt-oss-120b-f16")
   llm_chain_id            Int?                  // Chain ID for signature verification
   llm_reasoning           String?               // LLM reasoning for classification
-  
+  llm_market_context      String?               // Market context string used in the prompt (for signature verification)
+  llm_full_prompt         String?               // Full prompt (system + user) sent to LLM (for signature verification)
+  max_favorable_excursion  Decimal? @db.Decimal(10, 4)  // Track max MFE over lifetime
+  max_adverse_excursion    Decimal? @db.Decimal(10, 4)  // Track max MAE over lifetime
+  impact_factor  Decimal? @default(0) @db.Decimal(10, 4)  // Store final impact factor
+
   telegram_sources        telegram_sources?     @relation(fields: [source_id], references: [id], onDelete: Cascade)
   telegram_alpha_users    telegram_alpha_users? @relation(fields: [alpha_user_id], references: [id], onDelete: Cascade)
 
@@ -519,15 +567,40 @@ model venue_markets {
 }
 
 model ostium_available_pairs {
+  // Ostium Pair Data
   id                  Int       @id
-  symbol              String
+  symbol              String    @unique
   max_leverage        Float?
   maker_max_leverage  Float?
   group               String?
+
+  // LunarCrush Market Metrics
+  galaxy_score            Float?
+  alt_rank                Int?
+  social_volume_24h       Float?
+  sentiment               Float?
+  percent_change_24h      Float?
+  volatility              Float?
+  price                   Decimal? @db.Decimal(38, 8)
+  volume_24h              Decimal? @db.Decimal(38, 8)
+  market_cap              Decimal? @db.Decimal(38, 8)
+  market_cap_rank         Int?
+  social_dominance        Float?
+  market_dominance        Float?
+  interactions_24h        Float?
+  galaxy_score_previous   Float?
+  alt_rank_previous       Int?
+
+  // Timestamps
   created_at          DateTime  @default(now()) @db.Timestamptz(6)
   updated_at          DateTime  @updatedAt @db.Timestamptz(6)
 
   @@index([group])
+  @@index([symbol])
+  @@index([updated_at])
+  @@index([price])
+  @@index([sentiment])
+  @@index([volatility])
 }
 
 model venue_routing_config {
@@ -581,6 +654,135 @@ model wallet_pool {
   created_at              DateTime? @default(now()) @db.Timestamptz(6)
 }
 
+model user_telegram_notifications {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_wallet       String    @unique
+  telegram_chat_id  String    @unique
+  telegram_username String?
+  telegram_user_id  String?
+  link_code         String?   @unique
+  is_active         Boolean   @default(true)
+  linked_at         DateTime  @default(now()) @db.Timestamptz(6)
+  last_notified_at  DateTime? @db.Timestamptz(6)
+  notification_logs notification_logs[]
+
+  @@index([user_wallet])
+  @@index([telegram_chat_id])
+  @@index([link_code])
+}
+
+model notification_logs {
+  id                              String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_wallet                     String
+  position_id                     String?                      @db.Uuid
+  signal_id                       String?                      @db.Uuid
+  notification_type               notification_type_t
+  message_content                 String?
+  telegram_message_id             String?
+  status                          notification_status_t        @default(PENDING)
+  error_message                   String?
+  sent_at                         DateTime?                    @db.Timestamptz(6)
+  created_at                      DateTime                     @default(now()) @db.Timestamptz(6)
+  user_telegram_notifications     user_telegram_notifications? @relation(fields: [user_wallet], references: [user_wallet], onDelete: Cascade)
+
+  @@index([user_wallet, created_at])
+  @@index([position_id])
+  @@index([signal_id])
+  @@index([notification_type, status])
+  @@index([created_at])
+}
+
+/// Temporary cache table for lazy trading link codes
+/// Maps link codes to wallet addresses so the webhook knows which wallet the telegram belongs to
+/// Entries expire after 10 minutes
+model lazy_trading_link_cache {
+  link_code   String   @id @db.VarChar(50)
+  user_wallet String   @db.VarChar(255)
+  expires_at  DateTime @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([expires_at])
+  @@index([user_wallet])
+}
+
+model user_api_keys {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_wallet String
+  key_hash   String    @unique
+  key_prefix String
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  last_used_at DateTime? @db.Timestamptz(6)
+  revoked_at DateTime? @db.Timestamptz(6)
+
+  @@index([user_wallet])
+  @@index([revoked_at])
+}
+
+model credit_ledger_entry {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_wallet  String // 'SYSTEM' for treasury-only rows
+  amount       Decimal              @db.Decimal(20, 8)
+  entry_type   credit_entry_type_t
+  purpose      String
+  reference_id String?              @unique // Stripe Session ID or Web3 Tx Hash (for idempotency)
+  metadata     Json?
+  created_at   DateTime             @default(now()) @db.Timestamptz(6)
+
+  @@index([user_wallet])
+  @@index([reference_id])
+  @@index([created_at])
+}
+
+model user_credit_balance {
+  user_wallet String   @id
+  balance     Decimal  @default(0) @db.Decimal(20, 8)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([user_wallet])
+}
+
+model system_treasury {
+  id             String   @id @default("GLOBAL_TREASURY")
+  total_minted   Decimal  @default(0) @db.Decimal(20, 8)
+  total_consumed Decimal  @default(0) @db.Decimal(20, 8)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
+model user_trade_quota {
+  user_wallet       String   @id
+  trades_total      Int      @default(0)  // Lifetime trades purchased
+  trades_used       Int      @default(0)  // Trades consumed
+  trades_remaining  Int      @default(0)  // Available trades (trades_total - trades_used)
+  updated_at        DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([user_wallet])
+}
+
+model top_traders {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  wallet_address      String   @unique
+  total_volume        Decimal  @db.Decimal(30, 6)
+  total_closed_volume Decimal  @db.Decimal(30, 6)
+  total_pnl           Decimal  @db.Decimal(30, 6)
+  total_profit_trades Int
+  total_loss_trades   Int
+  total_trades        Int
+  last_active_at      DateTime @db.Timestamptz(6)
+  edge_score          Float    @default(0) @db.Real
+  consistency_score   Float    @default(0) @db.Real
+  stake_score         Float    @default(0) @db.Real
+  freshness_score     Float    @default(0) @db.Real
+  impact_factor       Float    @default(0) @db.Real
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @updatedAt @db.Timestamptz(6)
+  agent_top_traders   agent_top_traders[]
+  
+  @@index([wallet_address])
+  @@index([impact_factor])
+  @@index([total_pnl])
+  @@index([updated_at])
+}
+
 enum agent_status_t {
   DRAFT
   PUBLIC
@@ -616,4 +818,51 @@ enum venue_t {
   HYPERLIQUID
   OSTIUM
   MULTI
+}
+
+enum notification_type_t {
+  SIGNAL_EXECUTED      // Signal resulted in a position
+  SIGNAL_NOT_TRADED    // Signal generated but not traded
+  POSITION_CLOSED
+  STOP_LOSS_HIT
+  TAKE_PROFIT_HIT
+  QUOTA_EXCEEDED       // User has no trade quota available
+}
+
+enum notification_status_t {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum credit_entry_type_t {
+  PURCHASE
+  USAGE
+  REWARD
+  ADJUSTMENT
+}
+
+/// Trader trades - populated by trader-alpha-worker, consumed by signal-generator
+/// Tracks trades from top traders that are being copy-traded
+model trader_trades {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source_trade_id       String   @unique // Trade ID from subgraph
+  trader_wallet         String
+  agent_id              String   @db.Uuid // Which agent tracks this trader
+  token_symbol          String
+  side                  String   // "LONG" or "SHORT"
+  collateral            Decimal  @db.Decimal(20, 8)
+  leverage              Float    @db.Real
+  entry_price           Decimal  @db.Decimal(20, 8)
+  take_profit_price     Decimal? @db.Decimal(20, 8)
+  stop_loss_price       Decimal? @db.Decimal(20, 8)
+  is_open               Boolean  @default(true)
+  processed_for_signals Boolean  @default(false)
+  trade_timestamp       DateTime @db.Timestamptz(6)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  
+  @@index([agent_id])
+  @@index([trader_wallet])
+  @@index([processed_for_signals])
+  @@index([trade_timestamp])
 }
