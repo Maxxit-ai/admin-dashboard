@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { StatusBadge, VenueBadge } from "@/app/components/ui/Badge";
 import type { AgentWithStats } from "@/lib/api";
 import { AgentAnalyticsSection } from "./AgentAnalyticsSection";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface AgentsSectionProps {
     agents: AgentWithStats[] | undefined;
@@ -30,8 +31,18 @@ type SortKey = "subscribers" | "pnl" | "positions" | "name";
 type AgentsView = "list" | "analytics";
 
 export function AgentsSection({ agents, isLoading }: AgentsSectionProps) {
-    const [view, setView] = useState<AgentsView>("analytics");
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const view = (searchParams.get("view") as AgentsView) || "analytics";
     const [sortBy, setSortBy] = useState<SortKey>("subscribers");
+
+    const setView = useCallback((newView: AgentsView) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("view", newView);
+        router.push(`${pathname}?${params.toString()}`);
+    }, [searchParams, pathname, router]);
 
     const sortedAgents = useMemo(() => {
         if (!agents) return [];

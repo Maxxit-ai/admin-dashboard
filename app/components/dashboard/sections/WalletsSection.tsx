@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useWalletBalances } from "@/hooks/use-wallet-balances";
 import { SmallStatCard } from "@/app/components/ui/StatCard";
 import { WalletTypeBadge } from "@/app/components/ui/Badge";
 import { OnboardingSection } from "./OnboardingSection";
 import { TrendingUp, Wallet } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface WalletsSectionProps {
     isActive: boolean;
@@ -15,7 +16,18 @@ function formatAddress(address: string): string {
 }
 
 export function WalletsSection({ isActive }: WalletsSectionProps) {
-    const [subTab, setSubTab] = useState<"growth" | "balances">("growth");
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const subTab = (searchParams.get("view") as "growth" | "balances") || "growth";
+
+    const setSubTab = useCallback((newTab: "growth" | "balances") => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("view", newTab);
+        router.push(`${pathname}?${params.toString()}`);
+    }, [searchParams, pathname, router]);
+
     const { data: walletData, isLoading, isFetching, refetch, dataUpdatedAt } = useWalletBalances(isActive && subTab === "balances");
 
     if (!isActive) return null;
