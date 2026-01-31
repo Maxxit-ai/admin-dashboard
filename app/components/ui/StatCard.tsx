@@ -6,7 +6,7 @@ interface StatCardProps {
     value: string | number;
     subValue?: string;
     trend?: "up" | "down" | "neutral";
-    icon?: string;
+    icon?: ReactNode;
     isLoading?: boolean;
     className?: string;
     tooltip?: string;

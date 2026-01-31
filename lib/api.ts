@@ -98,11 +98,37 @@ export interface WalletData {
     };
 }
 
+export interface AgentAnalyticsPoint {
+    date: string;
+    deployments: number;
+    cumulativePnL: number;
+    signals: number;
+    signalsByVenue: Record<string, number>;
+}
+
+export interface AgentAnalyticsData {
+    daily: AgentAnalyticsPoint[];
+    topStats: {
+        totalSubscribers: number;
+        activeSubscribers: number;
+        totalSignals30d: number;
+        netPnL30d: number;
+    };
+}
+
 // API functions
 export async function fetchDashboardStats(): Promise<DashboardStats> {
     const res = await fetch(`${API_BASE}/dashboard-stats`);
     if (!res.ok) {
         throw new Error(`Failed to fetch dashboard stats: ${res.statusText}`);
+    }
+    return res.json();
+}
+
+export async function fetchAgentAnalytics(): Promise<AgentAnalyticsData> {
+    const res = await fetch(`${API_BASE}/agent-analytics`);
+    if (!res.ok) {
+        throw new Error(`Failed to fetch agent analytics: ${res.statusText}`);
     }
     return res.json();
 }
