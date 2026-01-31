@@ -29,7 +29,7 @@ export function OverviewSection({
                     value={stats?.overview.totalAgents ?? 0}
                     subValue={
                         stats
-                            ? `${stats.overview.publicAgents} public, ${stats.overview.privateAgents} private`
+                            ? `${stats.overview.publicAgents} public, ${stats.overview.privateAgents} private, ${stats.overview.draftAgents} draft`
                             : undefined
                     }
                     icon="🤖"
