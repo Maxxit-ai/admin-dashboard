@@ -38,8 +38,8 @@ export default function AdminDashboard() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-mono uppercase transition-all ${activeTab === tab
-                  ? "bg-accent text-[var(--bg-deep)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                ? "bg-accent text-[var(--bg-deep)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
                 }`}
             >
               {tab}
@@ -71,6 +71,7 @@ export default function AdminDashboard() {
       {activeTab === "wallets" && (
         <WalletsSection isActive={activeTab === "wallets"} />
       )}
+
 
       {activeTab === "activity" && (
         <ActivitySection
