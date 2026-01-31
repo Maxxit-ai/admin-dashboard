@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Info } from "lucide-react";
 
 interface StatCardProps {
     label: string;
@@ -8,6 +9,7 @@ interface StatCardProps {
     icon?: string;
     isLoading?: boolean;
     className?: string;
+    tooltip?: string;
 }
 
 export function StatCard({
@@ -18,6 +20,7 @@ export function StatCard({
     icon,
     isLoading = false,
     className = "",
+    tooltip,
 }: StatCardProps) {
     if (isLoading) {
         return (
@@ -41,7 +44,17 @@ export function StatCard({
             className={`border border-[var(--border)] bg-[var(--bg-surface)] p-6 hover:border-accent/50 transition-all duration-300 group ${className}`}
         >
             <div className="flex items-start justify-between mb-4">
-                <p className="data-label">{label}</p>
+                <div className="flex items-center gap-2">
+                    <p className="data-label">{label}</p>
+                    {tooltip && (
+                        <div className="group/tooltip relative">
+                            <Info className="h-3 w-3 text-[var(--text-muted)] hover:text-accent cursor-help" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-[10px] font-mono w-48 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition-all z-50 pointer-events-none uppercase leading-relaxed">
+                                {tooltip}
+                            </div>
+                        </div>
+                    )}
+                </div>
                 {icon && (
                     <span className="text-2xl opacity-50 group-hover:opacity-100 transition-opacity">
                         {icon}
@@ -50,10 +63,10 @@ export function StatCard({
             </div>
             <p
                 className={`font-display text-4xl transition-colors ${trend === "up"
-                        ? "text-accent"
-                        : trend === "down"
-                            ? "text-[var(--danger)]"
-                            : "text-[var(--text-primary)]"
+                    ? "text-accent"
+                    : trend === "down"
+                        ? "text-[var(--danger)]"
+                        : "text-[var(--text-primary)]"
                     }`}
             >
                 {value}
@@ -70,6 +83,7 @@ interface SmallStatCardProps {
     value: string | number;
     isLoading?: boolean;
     accent?: boolean;
+    tooltip?: string;
 }
 
 export function SmallStatCard({
@@ -77,6 +91,7 @@ export function SmallStatCard({
     value,
     isLoading = false,
     accent = false,
+    tooltip,
 }: SmallStatCardProps) {
     if (isLoading) {
         return (
@@ -92,7 +107,17 @@ export function SmallStatCard({
             className={`border bg-[var(--bg-surface)] p-4 hover:border-accent/50 transition-colors ${accent ? "border-accent" : "border-[var(--border)]"
                 }`}
         >
-            <p className="data-label mb-2">{label}</p>
+            <div className="flex items-center gap-2 mb-2">
+                <p className="data-label">{label}</p>
+                {tooltip && (
+                    <div className="group/tooltip relative">
+                        <Info className="h-3 w-3 text-[var(--text-muted)] hover:text-accent cursor-help" />
+                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-[10px] font-mono w-48 invisible group-hover/tooltip:visible opacity-0 group-hover/tooltip:opacity-100 transition-all z-50 pointer-events-none uppercase leading-relaxed">
+                            {tooltip}
+                        </div>
+                    </div>
+                )}
+            </div>
             <p className={`font-display text-2xl ${accent ? "text-accent" : ""}`}>
                 {value}
             </p>

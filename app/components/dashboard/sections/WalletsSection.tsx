@@ -85,6 +85,7 @@ export function WalletsSection({ isActive }: WalletsSectionProps) {
                                     label="TOTAL WALLETS"
                                     value={walletData.totals?.walletCount || 0}
                                     accent
+                                    tooltip="Total unique blockchain addresses (Agents + Profit Receivers) currently monitored for balances."
                                 />
                                 <SmallStatCard
                                     label="TOTAL ETH"

@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    /*
     // Add safe wallet addresses
     deployments.forEach((deployment: any) => {
       if (deployment.safe_wallet) {
@@ -128,6 +129,7 @@ export async function GET(req: NextRequest) {
         });
       }
     });
+    */
 
     // Add agent addresses (Hyperliquid/Ostium)
     userAgentAddresses.forEach((ua: any) => {
@@ -152,6 +154,7 @@ export async function GET(req: NextRequest) {
     const balanceMap = await batchGetBalances(provider, addressArray, TOKENS);
 
     // Map results back to wallet info
+    // For the table: Show all instances (even repeating addresses with different types)
     for (const [lowerAddr, metas] of addressMetadata.entries()) {
       const balanceResult = balanceMap.get(lowerAddr);
       if (!balanceResult) continue;
@@ -170,17 +173,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Calculate totals
+    // Calculate totals - ONLY count each unique address once to avoid double counting
     const totals = {
-      totalEth: walletBalances.reduce((sum, w) => sum + parseFloat(w.ethBalance || "0"), 0),
+      totalEth: 0,
       totalByToken: {} as Record<string, number>,
-      walletCount: walletBalances.length,
+      walletCount: addressArray.length, // addressArray contains unique addresses
     };
 
-    walletBalances.forEach((w) => {
-      Object.entries(w.tokenBalances).forEach(([symbol, balance]) => {
-        totals.totalByToken[symbol] = (totals.totalByToken[symbol] || 0) + parseFloat(balance);
-      });
+    addressArray.forEach((lowerAddr) => {
+      const balanceResult = balanceMap.get(lowerAddr);
+      if (balanceResult) {
+        totals.totalEth += parseFloat(balanceResult.ethBalance || "0");
+        Object.entries(balanceResult.tokenBalances).forEach(([symbol, balance]) => {
+          totals.totalByToken[symbol] = (totals.totalByToken[symbol] || 0) + parseFloat(balance);
+        });
+      }
     });
 
     const duration = Date.now() - startTime;

@@ -6,9 +6,8 @@ import { DashboardLayout } from "@/app/components/dashboard/DashboardLayout";
 import { OverviewSection } from "@/app/components/dashboard/sections/OverviewSection";
 import { AgentsSection } from "@/app/components/dashboard/sections/AgentsSection";
 import { WalletsSection } from "@/app/components/dashboard/sections/WalletsSection";
-import { ActivitySection } from "@/app/components/dashboard/sections/ActivitySection";
 
-type TabType = "overview" | "agents" | "wallets" | "activity";
+type TabType = "overview" | "agents" | "wallets";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
@@ -33,7 +32,7 @@ export default function AdminDashboard() {
       {/* Quick Actions Bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          {(["overview", "agents", "wallets", "activity"] as const).map((tab) => (
+          {(["overview", "agents", "wallets"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -70,14 +69,6 @@ export default function AdminDashboard() {
 
       {activeTab === "wallets" && (
         <WalletsSection isActive={activeTab === "wallets"} />
-      )}
-
-
-      {activeTab === "activity" && (
-        <ActivitySection
-          activities={stats?.recentActivity}
-          isLoading={isLoading}
-        />
       )}
     </DashboardLayout>
   );

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, Zap, Shield } from 'lucide-react';
+import { TrendingUp, Zap, Shield } from 'lucide-react';
+import { StatCard } from '@/app/components/ui/StatCard';
 
 interface OnboardedUsersDataPoint {
     date: string;
@@ -88,31 +89,24 @@ export function OnboardingSection() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-5 w-5 text-[var(--accent)]" />
-                        <p className="font-mono text-xs text-[var(--text-muted)]">TOTAL USERS</p>
-                    </div>
-                    <p className="text-3xl font-display">{loading ? '...' : totalUsers.toLocaleString()}</p>
-                </div>
+                <StatCard
+                    label="TOTAL USERS"
+                    value={loading ? '...' : totalUsers.toLocaleString()}
+                    icon="👥"
+                    tooltip="Total unique onboarded users who have generated agent addresses."
+                />
 
-                <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-5 w-5 text-[var(--accent)]" />
-                        <p className="font-mono text-xs text-[var(--text-muted)]">AVG PER DAY</p>
-                    </div>
-                    <p className="text-3xl font-display">{loading ? '...' : stats.avgPerDay}</p>
-                </div>
+                <StatCard
+                    label="AVG PER DAY"
+                    value={loading ? '...' : stats.avgPerDay}
+                    icon="📈"
+                />
 
-                <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="h-5 w-5 text-[var(--accent)]" />
-                        <p className="font-mono text-xs text-[var(--text-muted)]">DATE RANGE</p>
-                    </div>
-                    <p className="text-sm font-display pt-2">
-                        {loading ? '...' : `${stats.firstDate} - ${stats.lastDate}`}
-                    </p>
-                </div>
+                <StatCard
+                    label="DATE RANGE"
+                    value={loading ? '...' : `${stats.firstDate} - ${stats.lastDate}`}
+                    icon="📅"
+                />
             </div>
 
             <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
@@ -183,15 +177,6 @@ export function OnboardingSection() {
                                         />
                                         <Line
                                             type="monotone"
-                                            dataKey="cumulativeHyperliquid"
-                                            stroke="#8b5cf6"
-                                            strokeWidth={1.5}
-                                            strokeDasharray="5 5"
-                                            dot={false}
-                                            name="HYPERLIQUID"
-                                        />
-                                        <Line
-                                            type="monotone"
                                             dataKey="cumulativeOstium"
                                             stroke="#3b82f6"
                                             strokeWidth={1.5}
@@ -253,15 +238,6 @@ export function OnboardingSection() {
                                             dot={false}
                                             activeDot={{ r: 6, fill: '#10b981' }}
                                             name="TOTAL NEW"
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="hyperliquid"
-                                            stroke="#8b5cf6"
-                                            strokeWidth={1.5}
-                                            strokeDasharray="3 3"
-                                            dot={false}
-                                            name="HYPERLIQUID NEW"
                                         />
                                         <Line
                                             type="monotone"
