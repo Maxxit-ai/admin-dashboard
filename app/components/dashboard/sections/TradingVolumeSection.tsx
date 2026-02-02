@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { BarChart3, TrendingUp, TrendingDown, Wallet, Activity, Copy, Check, Zap } from 'lucide-react';
+import { BarChart3, TrendingUp, Wallet, Activity, Copy, Check, Zap } from 'lucide-react';
 
 interface WalletVolumeData {
     wallet: string;
@@ -25,12 +25,11 @@ interface TradingVolumeResponse {
     mainnetVolume: number;
     testnetVolume: number;
     totalVolume: number;
-    mainnetPnL: number;
-    testnetPnL: number;
-    totalPnL: number;
-    mainnetWallets: number;
-    testnetWallets: number;
+    uniqueSourcesAccessed: number;
     totalWallets: number;
+    activeTradingMainnetWallets: number;
+    activeTradingTestnetWallets: number;
+    totalActiveTradingWallets: number;
     mainnetTrades: number;
     testnetTrades: number;
     totalTrades: number;
@@ -150,24 +149,14 @@ export function TradingVolumeSection() {
 
                 <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                     <div className="flex items-center gap-2 mb-2">
-                        {(data?.totalPnL || 0) >= 0 ? (
-                            <TrendingUp className="h-5 w-5 text-green-400" />
-                        ) : (
-                            <TrendingDown className="h-5 w-5 text-red-400" />
-                        )}
-                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">TOTAL PNL</p>
+                        <Zap className="h-5 w-5 text-[var(--accent)]" />
+                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">SOURCES ACCESSED</p>
                     </div>
-                    <p className={`text-3xl font-display ${(data?.totalPnL || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {loading ? '...' : formatPnL(data?.totalPnL || 0)}
+                    <p className="text-3xl font-display">
+                        {loading ? '...' : (data?.uniqueSourcesAccessed || 0).toLocaleString()}
                     </p>
                     <div className="mt-2 text-xs text-[var(--text-muted)] font-mono">
-                        <span className={data?.mainnetPnL && data.mainnetPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
-                            Mainnet: {formatPnL(data?.mainnetPnL || 0)}
-                        </span>
-                        <span className="mx-2">|</span>
-                        <span className={data?.testnetPnL && data.testnetPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
-                            Testnet: {formatPnL(data?.testnetPnL || 0)}
-                        </span>
+                        Unique sources processed
                     </div>
                 </div>
 
@@ -191,20 +180,20 @@ export function TradingVolumeSection() {
                 <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                     <div className="flex items-center gap-2 mb-2">
                         <Wallet className="h-5 w-5 text-green-400" />
-                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">MAINNET WALLETS</p>
+                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">ACTIVE TRADING WALLETS (MAINNET)</p>
                     </div>
                     <p className="text-3xl font-display text-green-400">
-                        {loading ? '...' : data?.mainnetWallets || 0}
+                        {loading ? '...' : data?.activeTradingMainnetWallets || 0}
                     </p>
                 </div>
 
                 <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                     <div className="flex items-center gap-2 mb-2">
                         <Wallet className="h-5 w-5 text-yellow-400" />
-                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">TESTNET WALLETS</p>
+                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">ACTIVE TRADING WALLETS (TESTNET)</p>
                     </div>
                     <p className="text-3xl font-display text-yellow-400">
-                        {loading ? '...' : data?.testnetWallets || 0}
+                        {loading ? '...' : data?.activeTradingTestnetWallets || 0}
                     </p>
                 </div>
 
@@ -216,6 +205,9 @@ export function TradingVolumeSection() {
                     <p className="text-3xl font-display">
                         {loading ? '...' : data?.totalWallets || 0}
                     </p>
+                    <div className="mt-2 text-xs text-[var(--text-muted)] font-mono">
+                        <span className="text-[var(--accent)]">{data?.totalActiveTradingWallets || 0} active/trading</span>
+                    </div>
                 </div>
             </div>
 

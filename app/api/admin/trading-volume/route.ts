@@ -61,12 +61,11 @@ interface TradingVolumeResponse {
     mainnetVolume: number;
     testnetVolume: number;
     totalVolume: number;
-    mainnetPnL: number;
-    testnetPnL: number;
-    totalPnL: number;
-    mainnetWallets: number;
-    testnetWallets: number;
+    uniqueSourcesAccessed: number;
     totalWallets: number;
+    activeTradingMainnetWallets: number;
+    activeTradingTestnetWallets: number;
+    totalActiveTradingWallets: number;
     mainnetTrades: number;
     testnetTrades: number;
     totalTrades: number;
@@ -168,6 +167,15 @@ function timestampToDateKey(timestamp: string): string {
 
 export async function GET() {
     try {
+        // Get total users from user_agent_addresses (consistent with other pages)
+        const userAddresses = await prisma.user_agent_addresses.findMany({
+            select: {
+                user_wallet: true,
+            },
+        });
+        const totalWalletsCount = userAddresses.length;
+
+        // Get mainnet/testnet breakdown from agent_deployments
         const deployments = await prisma.agent_deployments.findMany({
             select: {
                 user_wallet: true,
@@ -185,6 +193,20 @@ export async function GET() {
             } else {
                 mainnetWallets.add(d.user_wallet.toLowerCase());
             }
+        });
+
+        // Fetch unique sources count
+        const signals = await prisma.signals.findMany({
+            select: {
+                source_tweets: true,
+            },
+        });
+
+        const uniqueSources = new Set<string>();
+        signals.forEach((signal) => {
+            signal.source_tweets.forEach((tweet) => {
+                uniqueSources.add(tweet);
+            });
         });
 
         const walletData: WalletVolumeData[] = [];
@@ -229,21 +251,21 @@ export async function GET() {
 
         let mainnetVolume = 0;
         let testnetVolume = 0;
-        let mainnetPnL = 0;
-        let testnetPnL = 0;
         let mainnetTrades = 0;
         let testnetTrades = 0;
+        let activeTradingMainnetWallets = 0;
+        let activeTradingTestnetWallets = 0;
 
         walletData.forEach((data) => {
             const trades = data.totalProfitTrades + data.totalLossTrades;
             if (data.isTestnet) {
                 testnetVolume += data.totalVolume;
-                testnetPnL += data.totalPnL;
                 testnetTrades += trades;
+                activeTradingTestnetWallets += 1;
             } else {
                 mainnetVolume += data.totalVolume;
-                mainnetPnL += data.totalPnL;
                 mainnetTrades += trades;
+                activeTradingMainnetWallets += 1;
             }
         });
 
@@ -300,12 +322,11 @@ export async function GET() {
             mainnetVolume,
             testnetVolume,
             totalVolume: mainnetVolume + testnetVolume,
-            mainnetPnL,
-            testnetPnL,
-            totalPnL: mainnetPnL + testnetPnL,
-            mainnetWallets: mainnetWallets.size,
-            testnetWallets: testnetWallets.size,
-            totalWallets: mainnetWallets.size + testnetWallets.size,
+            uniqueSourcesAccessed: uniqueSources.size,
+            totalWallets: totalWalletsCount,
+            activeTradingMainnetWallets,
+            activeTradingTestnetWallets,
+            totalActiveTradingWallets: activeTradingMainnetWallets + activeTradingTestnetWallets,
             mainnetTrades,
             testnetTrades,
             totalTrades: mainnetTrades + testnetTrades,
