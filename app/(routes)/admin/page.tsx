@@ -6,9 +6,10 @@ import { DashboardLayout } from "@/app/components/dashboard/DashboardLayout";
 import { OverviewSection } from "@/app/components/dashboard/sections/OverviewSection";
 import { AgentsSection } from "@/app/components/dashboard/sections/AgentsSection";
 import { WalletsSection } from "@/app/components/dashboard/sections/WalletsSection";
+import { TradingVolumeSection } from "@/app/components/dashboard/sections/TradingVolumeSection";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
-type TabType = "overview" | "agents" | "wallets";
+type TabType = "overview" | "agents" | "wallets" | "activity";
 
 function AdminDashboardContent() {
   const router = useRouter();
@@ -47,7 +48,7 @@ function AdminDashboardContent() {
       {/* Quick Actions Bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          {(["overview", "agents", "wallets"] as const).map((tab) => (
+          {(["overview", "agents", "wallets", "activity"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
@@ -84,6 +85,10 @@ function AdminDashboardContent() {
 
       {activeTab === "wallets" && (
         <WalletsSection isActive={activeTab === "wallets"} />
+      )}
+
+      {activeTab === "activity" && (
+        <TradingVolumeSection />
       )}
     </DashboardLayout>
   );

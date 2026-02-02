@@ -80,7 +80,7 @@ const navItems: NavItem[] = [
     { label: "Overview", value: "overview", icon: <IconOverview /> },
     { label: "Agents", value: "agents", icon: <IconAgents /> },
     { label: "Wallets", value: "wallets", icon: <IconWallets /> },
-    // { label: "Activity", value: "activity", icon: <IconActivity /> },
+    { label: "Activity", value: "activity", icon: <IconActivity /> },
 ];
 
 export function DashboardLayout({
