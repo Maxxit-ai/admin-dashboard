@@ -150,13 +150,13 @@ export function TradingVolumeSection() {
                 <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                     <div className="flex items-center gap-2 mb-2">
                         <Zap className="h-5 w-5 text-[var(--accent)]" />
-                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">SOURCES ACCESSED</p>
+                        <p className="data-label text-xs font-mono uppercase text-[var(--text-muted)]">SOURCES IN USE</p>
                     </div>
                     <p className="text-3xl font-display">
                         {loading ? '...' : (data?.uniqueSourcesAccessed || 0).toLocaleString()}
                     </p>
                     <div className="mt-2 text-xs text-[var(--text-muted)] font-mono">
-                        Unique sources processed
+                        Unique sources in use
                     </div>
                 </div>
 
@@ -176,7 +176,7 @@ export function TradingVolumeSection() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                     <div className="flex items-center gap-2 mb-2">
                         <Wallet className="h-5 w-5 text-green-400" />
@@ -209,7 +209,7 @@ export function TradingVolumeSection() {
                         <span className="text-[var(--accent)]">{data?.totalActiveTradingWallets || 0} active/trading</span>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Time-series Charts */}
             <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
@@ -329,7 +329,7 @@ export function TradingVolumeSection() {
                 )}
             </div>
 
-            <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+            {/* <div className="border border-[var(--border)] bg-[var(--bg-surface)] p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-display flex items-center gap-2 uppercase">
                         <Wallet className="h-5 w-5 text-[var(--accent)]" />
@@ -460,7 +460,7 @@ export function TradingVolumeSection() {
                         </table>
                     </div>
                 )}
-            </div>
+            </div> */}
         </div>
     );
 }
